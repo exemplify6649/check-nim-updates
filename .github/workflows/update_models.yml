@@ -1,0 +1,42 @@
+name: Check NVIDIA NIM Models
+
+on:
+  schedule:
+    - cron: '7 * * * *'  # 每小时第 0 分钟运行
+  workflow_dispatch:      # 允许在 GitHub 控制台手动运行
+
+permissions:
+  contents: write        # 允许提交和推送到仓库
+
+jobs:
+  track-models:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch Models and Update Files
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: |
+          python scripts/update_models.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add data/ README.md
+          
+          # 仅当有文件变动时才提交，避免产生空提交
+          if git diff --staged --quiet; then
+            echo "没有模型发生变动，跳过提交。"
+          else
+            git commit -m "chore(auto): update nvidia nim models [skip ci]"
+            git push
+          fi
