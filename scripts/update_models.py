@@ -14,41 +14,37 @@ README_PATH = "README.md"
 MARKER_START = "<!-- CHANGES_START -->"
 MARKER_END = "<!-- CHANGES_END -->"
 
+# 735790403 是英伟达创立日 (1993-04-26) 彩蛋默认时间戳
+NVIDIA_FOUNDING_TS = 735790403
+
 def fetch_models(api_key: str):
     req = urllib.request.Request(
         API_URL,
         headers={
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
-            "User-Agent": "NIM-Model-Tracker"
+            "User-Agent": "NIM-Tracker"
         }
     )
     with urllib.request.urlopen(req) as resp:
         if resp.status != 200:
             raise RuntimeError(f"API 请求失败，HTTP 状态码: {resp.status}")
-        data = json.loads(resp.read().decode("utf-8"))
-        return data.get("data", [])
+        return json.loads(resp.read().decode("utf-8")).get("data", [])
 
 def format_date_short(ts):
-    """提取简短日期 YYYY-MM-DD"""
+    """格式化为简明日期 YYYY-MM-DD"""
     if not ts:
-        return "未知日期"
+        return "N/A"
     try:
-        return datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
+        ts_int = int(ts)
+        if ts_int == NVIDIA_FOUNDING_TS:
+            return "1993-04-26"  # NVIDIA 创立日默认值
+        return datetime.fromtimestamp(ts_int, tz=timezone.utc).strftime("%Y-%m-%d")
     except Exception:
         return str(ts)
 
-def format_datetime_utc(ts):
-    """格式化完整 UTC 时间戳用于 CSV"""
-    if not ts:
-        return "N/A"
-    try:
-        return datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    except Exception:
-        return "N/A"
-
 def load_previous_models():
-    """从已有的 models.csv 加载上次存量的模型字典"""
+    """从本地 models.csv 加载已存模型"""
     if not os.path.exists(CSV_PATH):
         return {}
     models = {}
@@ -58,65 +54,66 @@ def load_previous_models():
             models[row["id"]] = row
     return models
 
-def update_csv(models):
-    """全量更新 models.csv，并按 created 降序（最新在前）"""
-    models.sort(key=lambda x: int(x.get("created") or 0), reverse=True)
+def update_csv(models, old_map, now_utc_str):
+    """
+    保存 models.csv:
+    1. 为新模型注入 first_seen_utc，旧模型保持原时间。
+    2. 多级排序：先按 first_seen 倒序（最新发现的在顶端），再按 created 倒序，最后按 id 排序。
+    """
     os.makedirs(DATA_DIR, exist_ok=True)
-    fields = ["id", "created", "created_at_utc", "owned_by", "object"]
     
+    rows = []
+    for m in models:
+        mid = m["id"]
+        # 如果是已知模型，保留最初捕获时间；如果是新模型，记录当前时间
+        first_seen = old_map[mid]["first_seen_utc"] if mid in old_map and "first_seen_utc" in old_map[mid] else now_utc_str
+        
+        rows.append({
+            "id": mid,
+            "owned_by": m.get("owned_by", "unknown"),
+            "created": m.get("created", 0),
+            "created_date": format_date_short(m.get("created")),
+            "first_seen_utc": first_seen,
+            "object": m.get("object", "model")
+        })
+
+    # 多级降序排序：最新发现优先 -> 接口时间优先 -> ID 升序
+    rows.sort(key=lambda x: (x["first_seen_utc"], int(x["created"] or 0), -ord(x["id"][0]) if x["id"] else 0), reverse=True)
+
+    fields = ["id", "owned_by", "created_date", "first_seen_utc", "created", "object"]
     with open(CSV_PATH, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
-        for m in models:
-            writer.writerow({
-                "id": m.get("id"),
-                "created": m.get("created"),
-                "created_at_utc": format_datetime_utc(m.get("created")),
-                "owned_by": m.get("owned_by", "unknown"),
-                "object": m.get("object", "model"),
-            })
+        writer.writerows(rows)
 
-def build_compact_item(model_id, meta):
-    """生成只包含核心三要素的紧凑 dict"""
-    created_raw = meta.get("created")
-    return {
-        "id": model_id,
-        "created": format_date_short(created_raw),
-        "owned_by": meta.get("owned_by", "unknown")
-    }
-
-def append_to_jsonl(added_items, removed_items):
-    """追加写入一行变动到 changes_log.jsonl"""
-    now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+def append_to_jsonl(now_utc_str, added_items, removed_items):
+    """追加写入变更记录"""
+    os.makedirs(DATA_DIR, exist_ok=True)
     record = {
-        "timestamp": now_utc,
+        "timestamp": now_utc_str,
         "added": added_items,
         "removed": removed_items
     }
-    os.makedirs(DATA_DIR, exist_ok=True)
     with open(JSONL_PATH, "a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 def render_model_list(items, emoji, title):
-    """紧凑排版模型列表：仅 1 个则单行展示，多个则缩进换行"""
     if not items:
         return ""
-    count = len(items)
-    if count == 1:
-        item = items[0]
-        return f"  - {emoji} **{title} (1)**: `{item['id']}` (`{item['owned_by']}` · {item['created']})\n"
+    if len(items) == 1:
+        it = items[0]
+        return f"  - {emoji} **{title} (1)**: `{it['id']}` (`{it['owned_by']}` · {it['created']})\n"
     
-    res = f"  - {emoji} **{title} ({count})**:\n"
-    for item in items:
-        res += f"    - `{item['id']}` (`{item['owned_by']}` · {item['created']})\n"
+    res = f"  - {emoji} **{title} ({len(items)})**:\n"
+    for it in items:
+        res += f"    - `{it['id']}` (`{it['owned_by']}` · {it['created']})\n"
     return res
 
 def update_readme_top5():
-    """读取 jsonl 最后 5 条，渲染到 README.md"""
+    """提取 JSONL 尾部 5 行渲染到 README"""
     if not os.path.exists(JSONL_PATH):
         return
 
-    # 从后往前读取最后 5 行
     recent_5 = []
     with open(JSONL_PATH, "r", encoding="utf-8") as f:
         lines = [line.strip() for line in f if line.strip()]
@@ -128,13 +125,12 @@ def update_readme_top5():
 
     readme_blocks = []
     if not recent_5:
-        readme_blocks.append("*暂无变更记录（初始数据已就绪）*")
+        readme_blocks.append("*暂无模型变更记录*")
     else:
         for entry in recent_5:
             ts = entry["timestamp"]
             added = entry.get("added", [])
             removed = entry.get("removed", [])
-            
             block = f"- **{ts}**\n"
             block += render_model_list(added, "🟢", "新增")
             block += render_model_list(removed, "🔴", "移除")
@@ -149,9 +145,9 @@ def update_readme_top5():
         if MARKER_START in content and MARKER_END in content:
             before = content.split(MARKER_START)[0]
             after = content.split(MARKER_END)[1]
-            updated_content = f"{before}{MARKER_START}\n{new_content}\n{MARKER_END}{after}"
+            updated = f"{before}{MARKER_START}\n{new_content}\n{MARKER_END}{after}"
             with open(README_PATH, "w", encoding="utf-8") as f:
-                f.write(updated_content)
+                f.write(updated)
 
 def main():
     api_key = os.environ.get("NVIDIA_API_KEY")
@@ -159,21 +155,20 @@ def main():
         print("错误: 缺少环境变量 NVIDIA_API_KEY", file=sys.stderr)
         sys.exit(1)
 
-    print("正在抓取 NVIDIA NIM API 模型列表...")
+    now_utc_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    print("抓取模型列表中...")
     models = fetch_models(api_key)
     current_map = {m["id"]: m for m in models}
-    
     old_map = load_previous_models()
-    is_initial_run = (len(old_map) == 0)
 
-    if is_initial_run:
-        print("首次初始化运行，写入 models.csv...")
-        update_csv(models)
+    # 首次初始化运行
+    if not old_map:
+        print(f"首次初始化：记录现存全部 {len(models)} 个模型")
+        update_csv(models, {}, now_utc_str)
         update_readme_top5()
-        print("初始化完成。")
         return
 
-    # 计算差异
     current_ids = set(current_map.keys())
     old_ids = set(old_map.keys())
 
@@ -181,22 +176,31 @@ def main():
     removed_ids = old_ids - current_ids
 
     if not added_ids and not removed_ids:
-        print("模型列表无任何变化，流程结束。")
+        print("模型列表无任何变化。")
         return
 
-    # 提取简短的 {id, created, owned_by}
-    added_items = [build_compact_item(mid, current_map[mid]) for mid in sorted(added_ids)]
-    removed_items = [build_compact_item(mid, old_map[mid]) for mid in sorted(removed_ids)]
+    print(f"检测到变动: 新增 {len(added_ids)} 个, 移除 {len(removed_ids)} 个")
 
-    print(f"检测到变动: 新增 {len(added_items)} 个，移除 {len(removed_items)} 个")
+    # 构建紧凑变动对象 (id, owned_by, created)
+    added_items = [{
+        "id": mid,
+        "owned_by": current_map[mid].get("owned_by", "unknown"),
+        "created": format_date_short(current_map[mid].get("created"))
+    } for mid in sorted(added_ids)]
 
-    # 1. 覆盖 models.csv（按最新时间降序）
-    update_csv(models)
+    removed_items = [{
+        "id": mid,
+        "owned_by": old_map[mid].get("owned_by", "unknown"),
+        "created": old_map[mid].get("created_date", "未知")
+    } for mid in sorted(removed_ids)]
 
-    # 2. 追加写入 JSONL
-    append_to_jsonl(added_items, removed_items)
+    # 1. 更新 models.csv (保证新模型排在最前)
+    update_csv(models, old_map, now_utc_str)
 
-    # 3. 提取最近 5 次更新 README
+    # 2. 追加写入 JSONL 日志
+    append_to_jsonl(now_utc_str, added_items, removed_items)
+
+    # 3. 渲染最近 5 次变更至 README
     update_readme_top5()
     print("更新完成。")
 
