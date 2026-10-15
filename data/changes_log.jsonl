@@ -3,3 +3,4 @@
 {"timestamp": "2026-10-05 08:28 UTC", "added": [], "removed": [{"id": "nvidia/riva-translate-4b-instruct-v1.1", "owned_by": "nvidia", "created": "1993-04-26"}]}
 {"timestamp": "2026-10-15 06:44 UTC", "added": [{"id": "stepfun-ai/step-5-preview", "owned_by": "stepfun-ai", "created": "1993-04-26"}], "removed": []}
 {"timestamp": "2026-10-15 08:39 UTC", "added": [], "removed": [{"id": "moonshotai/kimi-k3", "owned_by": "moonshotai", "created": "1993-04-26"}]}
+{"timestamp": "2026-10-15 14:39 UTC", "added": [{"id": "nvidia/nemotron-3.5-super-vl-120b-a12b", "owned_by": "nvidia", "created": "1993-04-26"}], "removed": []}
