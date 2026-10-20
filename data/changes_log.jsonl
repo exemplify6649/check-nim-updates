@@ -4,3 +4,4 @@
 {"timestamp": "2026-10-15 06:44 UTC", "added": [{"id": "stepfun-ai/step-5-preview", "owned_by": "stepfun-ai", "created": "1993-04-26"}], "removed": []}
 {"timestamp": "2026-10-15 08:39 UTC", "added": [], "removed": [{"id": "moonshotai/kimi-k3", "owned_by": "moonshotai", "created": "1993-04-26"}]}
 {"timestamp": "2026-10-15 14:39 UTC", "added": [{"id": "nvidia/nemotron-3.5-super-vl-120b-a12b", "owned_by": "nvidia", "created": "1993-04-26"}], "removed": []}
+{"added": [{"created": "unknown", "id": "nvidia/nemotron-3.5-embed-1b", "owned_by": "nvidia"}, {"created": "unknown", "id": "nvidia/nemotron-3.5-embed-8b", "owned_by": "nvidia"}], "catalog": {"duplicate_ids": [], "duplicate_rows": 0, "invalid_rows": 0, "raw_count": 83, "unique_count": 83}, "metadata_changed": [], "removed": [], "restored": [], "timestamp": "2026-10-20 23:32:34 UTC"}
