@@ -3,6 +3,10 @@
 ## Recent model changes
 
 <!-- CHANGES_START -->
+- **2026-10-22 23:34:16 UTC**
+  - 🔴 **确认移除 (1)**:
+    - `nvidia/nemotron-3.5-bolt-e4b` (`nvidia` · unknown)
+
 - **2026-10-22 21:34:48 UTC**
   - 🟢 **新增 (1)**:
     - `nvidia/nemotron-3.5-bolt-e4b` (`nvidia` · unknown)
@@ -19,8 +23,4 @@
 - **2026-10-15 08:39 UTC**
   - 🔴 **确认移除 (1)**:
     - `moonshotai/kimi-k3` (`moonshotai` · 1993-04-26)
-
-- **2026-10-15 06:44 UTC**
-  - 🟢 **新增 (1)**:
-    - `stepfun-ai/step-5-preview` (`stepfun-ai` · 1993-04-26)
 <!-- CHANGES_END -->
