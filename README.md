@@ -3,6 +3,10 @@
 ## Recent model changes
 
 <!-- CHANGES_START -->
+- **2026-10-29 14:05:05 UTC**
+  - 🟢 **新增 (1)**:
+    - `mistralai/mistral-large-4-1t-a52b` (`mistralai` · unknown)
+
 - **2026-10-28 09:52:02 UTC**
   - 🔴 **确认移除 (1)**:
     - `z-ai/glm-5.3` (`z-ai` · unknown)
@@ -17,9 +21,5 @@
 
 - **2026-10-22 23:34:16 UTC**
   - 🔴 **确认移除 (1)**:
-    - `nvidia/nemotron-3.5-bolt-e4b` (`nvidia` · unknown)
-
-- **2026-10-22 21:34:48 UTC**
-  - 🟢 **新增 (1)**:
     - `nvidia/nemotron-3.5-bolt-e4b` (`nvidia` · unknown)
 <!-- CHANGES_END -->
