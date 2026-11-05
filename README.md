@@ -3,6 +3,10 @@
 ## Recent model changes
 
 <!-- CHANGES_START -->
+- **2026-11-05 18:41:06 UTC**
+  - 🔴 **确认移除 (1)**:
+    - `meta/llama-3.2-11b-vision-instruct` (`meta` · unknown)
+
 - **2026-10-29 14:05:05 UTC**
   - 🟢 **新增 (1)**:
     - `mistralai/mistral-large-4-1t-a52b` (`mistralai` · unknown)
@@ -18,8 +22,4 @@
 - **2026-10-23 01:42:45 UTC**
   - 🟢 **新增 (1)**:
     - `minimaxai/minimax-m3.1-flash` (`minimaxai` · unknown)
-
-- **2026-10-22 23:34:16 UTC**
-  - 🔴 **确认移除 (1)**:
-    - `nvidia/nemotron-3.5-bolt-e4b` (`nvidia` · unknown)
 <!-- CHANGES_END -->
