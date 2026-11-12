@@ -3,6 +3,10 @@
 ## Recent model changes
 
 <!-- CHANGES_START -->
+- **2026-11-12 18:51:49 UTC**
+  - 🔴 **确认移除 (1)**:
+    - `google/diffusiongemma-26b-a4b-it` (`google` · unknown)
+
 - **2026-11-05 18:41:06 UTC**
   - 🔴 **确认移除 (1)**:
     - `meta/llama-3.2-11b-vision-instruct` (`meta` · unknown)
@@ -18,8 +22,4 @@
 - **2026-10-23 14:42:46 UTC**
   - 🔵 **恢复 (1)**:
     - `nvidia/nemotron-3.5-bolt-e4b` (`nvidia` · unknown)
-
-- **2026-10-23 01:42:45 UTC**
-  - 🟢 **新增 (1)**:
-    - `minimaxai/minimax-m3.1-flash` (`minimaxai` · unknown)
 <!-- CHANGES_END -->
